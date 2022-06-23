@@ -4,8 +4,8 @@ import tekore as tk
 from tekore import RefreshingToken, Spotify
 
 
-CLIENT_ID = 'a86e89bf14a140028a500924baa6e1aa'
-CLIENT_SECRET = '556d02cf69434829938abda6cf5d10a4'
+CLIENT_ID = 'your_CLIENT_ID'
+CLIENT_SECRET = 'your_CLIENT_SECRET'
 REDIRECT_URI = 'https://example.com/callback'
 FILE_TEKORE = 'tekore.cfg'             #ARCHIVO TEKORE
 

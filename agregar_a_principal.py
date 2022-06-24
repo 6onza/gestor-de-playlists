@@ -4,8 +4,8 @@ import tekore as tk
 from tekore import RefreshingToken, Spotify
 
 
-CLIENT_ID = 'your_CLIENT_ID'
-CLIENT_SECRET = 'your_CLIENT_SECRET'
+CLIENT_ID = 'your_client_id'
+CLIENT_SECRET = 'your_client_secret'
 REDIRECT_URI = 'https://example.com/callback'
 FILE_TEKORE = 'tekore.cfg'             #ARCHIVO TEKORE
 
@@ -32,3 +32,27 @@ def generar_user_token() -> RefreshingToken:
         #  Tambien se crea el archivo externo "FILE_TEKORE" con los siguientes datos : CLIENT_ID, CLIENT_SECRET, REDIRECT_URI y el TOKEN.
 
     return user_token
+
+
+def llamar_api_spotify() -> Spotify:
+
+    return tk.Spotify(generar_user_token())
+
+def mostrar_playlists_spotify(spotify: Spotify) -> None:
+
+    # Nota : 'Spotify.followed_playlists' obtiene una lista de las listas de reproducción que posee o sigue el usuario actual.
+    #         Los parametros que recibe son 'limit' y 'offset'(este ultimo no es obligatorio). Limit se corresponde al número
+    #         de artículos a devolver (como maximo se puede ingresar el numero 50).
+    recursos_playlists = spotify.followed_playlists(limit=50).items
+    cant_playlists = recursos_playlists.__len__()
+
+    print("------------------Lista de PLAYLISTS------------------")
+    for i in range(cant_playlists):
+        recurso_playlist = spotify.followed_playlists(limit=50).items[i]
+        nombre_playlist = recurso_playlist.name
+        print(f"{i+1} - '{nombre_playlist}'")
+
+def main() -> None:
+    mostrar_playlists_spotify(llamar_api_spotify())
+
+main()

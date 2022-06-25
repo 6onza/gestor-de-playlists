@@ -38,6 +38,21 @@ def llamar_api_spotify() -> Spotify:
 
     return tk.Spotify(generar_user_token())
 
+def obtener_id_usuario_actual(spotify: Spotify) -> str:
+
+    # Nota : 'spotify.current_user()' obtiene recursos del perfil del usuario actual. No requiere argumentos obligatorios.
+    usuario_actual = spotify.current_user()
+    id_usuario_actual = usuario_actual.id
+
+    return id_usuario_actual
+
+def crear_playlist(id_usuario_actual: str, spotify: Spotify) -> None:
+
+    # Nota : ' spotify.playlist_create ' crea una lista de reproducción. Recibe como argumentos a 'user_id (str)', 'nombre_playlist (str)', 'public (bool)'
+    #        y 'descripcion_playlist (str)'.
+    nombre_playlist = input("Ingrese el nombre que le desea poner a la playlist: ")
+    spotify.playlist_create(id_usuario_actual, nombre_playlist, public=True)
+
 def mostrar_playlists_spotify(spotify: Spotify) -> None:
 
     # Nota : 'Spotify.followed_playlists' obtiene una lista de las listas de reproducción que posee o sigue el usuario actual.
@@ -53,6 +68,8 @@ def mostrar_playlists_spotify(spotify: Spotify) -> None:
         print(f"{i+1} - '{nombre_playlist}'")
 
 def main() -> None:
+    id_usuario_actual = obtener_id_usuario_actual(llamar_api_spotify())
     mostrar_playlists_spotify(llamar_api_spotify())
+    crear_playlist(id_usuario_actual,llamar_api_spotify())
 
 main()

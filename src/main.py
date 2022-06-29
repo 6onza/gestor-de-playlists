@@ -1,32 +1,7 @@
 import os
-from autenticar_en_plataformas import *
+from utils import *
 
 
-def cls() -> None:
-    """Limpia la terminal segun el sistema operativo"""
-
-    command: str = 'clear'
-
-    if os.name in ('nt', 'dos'):
-        command = 'cls'
-
-    os.system(command)
-
-
-def validate_option(options: list) -> str:
-    """Valida si la opción esta en la lista de opciones
-    Args:
-        options (list): Lista con las opciones disponibles
-    Returns:
-        str: Opción elegida
-    """
-
-    option: str = input("-> ")
-
-    while (option not in options):
-        option = input("Opción invalida, intente nuevamente: ")
-
-    return option
 
 
 def main() -> None:

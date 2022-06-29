@@ -15,7 +15,7 @@ def generar_user_token() -> RefreshingToken:
         #  o de la linea de abajo " user_token = tk.prompt_for_user_token(*conf, scope=tk.scope.every) ".
         # Ademas actualiza el archivo externo "FILE_TEKORE" con el nuevo TOKEN.
     else:
-        conf = (CLIENT_ID, CLIENT_SECRET, REDIRECT_URI)
+        conf = (CLIENT_ID_SPOTIFY, CLIENT_SECRET_SPOTIFY, REDIRECT_URI_SPOTIFY)
         user_token = tk.prompt_for_user_token(*conf, scope=tk.scope.every)
         tk.config_to_file(FILE_TEKORE, conf + (user_token.refresh_token,))
         #  Esto va a redireccionar a un formulario donde le pide al usuario la aceptacion de compartir los recursos de la cuenta spotify.
@@ -45,7 +45,7 @@ def crear_playlist_spotify(id_usuario_actual: str, spotify: Spotify) -> None:
 
     # Nota : ' spotify.playlist_create ' crea una lista de reproducción. Recibe como argumentos a 'user_id (str)', 'nombre_playlist (str)', 'public (bool)'
     #        y 'descripcion_playlist (str)'.
-    nombre_playlist = input("Ingrese el nombre que le desea poner a la playlist: ")
+    nombre_playlist: str = input("Ingrese el nombre que le desea poner a la playlist: ")
     spotify.playlist_create(id_usuario_actual, nombre_playlist, public=True)
 
 def mostrar_playlists_spotify(spotify: Spotify) -> None:

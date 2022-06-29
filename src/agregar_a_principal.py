@@ -3,7 +3,28 @@ import tekore as tk
 from utils import *
 from tekore import RefreshingToken, Spotify
 import csv
+from lyricsgenius import Genius
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
 
+
+# def generar_wordcloud(spotify: Spotify):
+#     """genera un wordcloud con las letras de las canciones de playlist elegida del usuario actual"""
+    
+#     id_playlist_buscada = buscar_playlist_spotify(spotify)
+#     playlist = spotify.playlist(id_playlist_buscada)
+#     # get the playlist's tracks names and owner's name
+#     tracks = playlist.tracks.items.track
+#     track_names = [track.name for track in tracks]
+#     owner_name = playlist.owner.display_name
+#     # create a word cloud image
+#     wordcloud = WordCloud(width=800, height=400, collocations=False).generate(' '.join(track_names))
+#     # display the word cloud
+#     plt.figure(figsize=(20, 10), facecolor=None)
+#     plt.imshow(wordcloud)
+#     plt.axis("off")
+#     plt.show()
+    
 
 def generar_user_token() -> RefreshingToken:
 
@@ -34,12 +55,13 @@ def llamar_api_spotify() -> Spotify:
 
 
 def obtener_id_usuario_actual(spotify: Spotify) -> str:
-
+    
     # Nota : 'spotify.current_user()' obtiene recursos del perfil del usuario actual. No requiere argumentos obligatorios.
     usuario_actual = spotify.current_user()
     id_usuario_actual = usuario_actual.id
 
     return id_usuario_actual
+
 
 def crear_playlist_spotify(id_usuario_actual: str, spotify: Spotify) -> None:
 
@@ -47,6 +69,7 @@ def crear_playlist_spotify(id_usuario_actual: str, spotify: Spotify) -> None:
     #        y 'descripcion_playlist (str)'.
     nombre_playlist: str = input("Ingrese el nombre que le desea poner a la playlist: ")
     spotify.playlist_create(id_usuario_actual, nombre_playlist, public=True)
+
 
 def mostrar_playlists_spotify(spotify: Spotify) -> None:
 
@@ -63,7 +86,7 @@ def mostrar_playlists_spotify(spotify: Spotify) -> None:
         print(f"{i+1} - '{nombre_playlist}'")
 
 
-def buscar_playlist_spotify(spotify: Spotify) -> list:
+def buscar_playlist_spotify(spotify: Spotify) -> str:
     """ Pide un nombre de playlist para buscarla entre sus playlists seguidas y la retorna.
     Args:
         spotify (Spotify): Usuario actual.
@@ -71,11 +94,12 @@ def buscar_playlist_spotify(spotify: Spotify) -> list:
     Returns:
         list: Playlist encontrada
     """
-    nombre_playlist: str = input("Ingrese el nombre de la playlist que desea exportar: ")
+    mostrar_playlists_spotify(spotify)
+    nombre_playlist: str = input("Ingrese el nombre de la playlist que desea buscar: ")
 
     # obtengo una lista de las playlists que sigue el usuario actual
     playlists = spotify.followed_playlists(limit=50).items
-    playlist_buscada: list = []
+    id_playlist_buscada: str = ""
 
     intentar_nuevamente: bool = True
 
@@ -87,7 +111,7 @@ def buscar_playlist_spotify(spotify: Spotify) -> list:
             
 
             if (playlists[total_playlists -1].name.lower() == nombre_playlist.lower()):
-                playlist_buscada = playlists[total_playlists]
+                id_playlist_buscada: str = playlists[total_playlists].id
                 encontrada = True              
             
             else:
@@ -109,13 +133,13 @@ def buscar_playlist_spotify(spotify: Spotify) -> list:
             
         
         
-    return playlist_buscada
+    return id_playlist_buscada
 
 
-def exportar_playlist_spotify(playlist_buscada: str, spotify: Spotify) -> None:
+def exportar_playlist_spotify(id_playlist_buscada: str, spotify: Spotify) -> None:
     # exporta los 10 atributos de la playlist a un archivo csv
     try:
-        playlist = spotify.playlist(playlist_buscada.id)
+        playlist = spotify.playlist(id_playlist_buscada)
         
         nombre_playlist: str = playlist.name
         owner: str = playlist.owner.display_name
@@ -161,6 +185,7 @@ def exportar_playlist_spotify(playlist_buscada: str, spotify: Spotify) -> None:
     except Exception as e:
         print(f"No se pudo exportar la playlist: {e}")
         input("Presione enter para continuar.")
+
     
 def sincronizar_spotify_youtube(spotify: Spotify) -> list:
 
@@ -188,8 +213,11 @@ def main() -> None:
     id_usuario_actual = obtener_id_usuario_actual(spotify)
     # crear_playlist(id_usuario_actual, spotify)
     mostrar_playlists_spotify(spotify)
-    id_playlist_buscada = buscar_playlist_spotify(spotify)
-    exportar_playlist_spotify(id_playlist_buscada, spotify)
-    lista_de_canciones_playlist = sincronizar_spotify_youtube(llamar_api_spotify())
-    print(lista_de_canciones_playlist)
+    
+    generar_wordcloud(spotify)
+
+    # playlist_buscada = buscar_playlist_spotify(spotify)
+    # exportar_playlist_spotify(playlist_buscada, spotify)
+    # lista_de_canciones_playlist = sincronizar_spotify_youtube(llamar_api_spotify())
+    # print(lista_de_canciones_playlist)
 main()

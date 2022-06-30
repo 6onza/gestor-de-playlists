@@ -1,9 +1,18 @@
 import os
 import tekore as tk
-from utils import *
+from utils import ( FILE_TEKORE,
+                    CLIENT_ID_SPOTIFY,
+                    CLIENT_SECRET_SPOTIFY,
+                    REDIRECT_URI_SPOTIFY
+                    )
 from tekore import RefreshingToken, Spotify
 
 def generar_user_token() -> RefreshingToken:
+    """Genera un token de usuario para la api de spotify
+
+    Returns:
+        RefreshingToken: Token de usuario para la api de spotify
+    """
 
     if os.path.exists(FILE_TEKORE):
 
@@ -27,5 +36,10 @@ def generar_user_token() -> RefreshingToken:
 
 
 def llamar_api_spotify() -> Spotify:
+    """Llama a la api de spotify y retorna un objeto de tipo Spotify
+
+    Returns:
+        Spotify: Objeto de tipo Spotify
+    """
 
     return tk.Spotify(generar_user_token())

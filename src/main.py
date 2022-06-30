@@ -5,6 +5,7 @@ from tekore import RefreshingToken, Spotify
 import csv
 from llamar_apis import *
 from generar_wordcloud import generar_wc
+import quickstart
 
 
 def obtener_id_usuario_actual(spotify: Spotify) -> str:
@@ -22,54 +23,6 @@ def crear_playlist_spotify(id_usuario_actual: str, spotify: Spotify) -> None:
     #        y 'descripcion_playlist (str)'.
     nombre_playlist: str = input("Ingrese el nombre que le desea poner a la playlist: ")
     spotify.playlist_create(id_usuario_actual, nombre_playlist, public=True)
-
-
-def buscar_playlist_spotify(spotify: Spotify) -> str:
-    """ Pide un nombre de playlist para buscarla entre sus playlists seguidas y la retorna.
-    Args:
-        spotify (Spotify): Usuario actual.
-    Returns:
-        list: Playlist encontrada
-    """
-    mostrar_playlists_spotify(spotify)
-    nombre_playlist: str = input("Ingrese el nombre de la playlist que desea buscar: ")
-
-    # obtengo una lista de las playlists que sigue el usuario actual
-    playlists = spotify.followed_playlists(limit=50).items
-    id_playlist_buscada: str = ""
-
-    intentar_nuevamente: bool = True
-
-    while (intentar_nuevamente):
-        total_playlists: int = playlists.__len__()
-        encontrada: bool =  False
-
-        while (not encontrada and total_playlists > 0):
-            
-
-            if (playlists[total_playlists -1].name.lower() == nombre_playlist.lower()):
-                id_playlist_buscada: str = playlists[total_playlists - 1].id
-                encontrada = True              
-            
-            else:
-                total_playlists -= 1
-
-        if (not encontrada):
-            print("No se encontro la playlist.")
-            continuar: str = input("Desea intentar nuevamente? (s/n) ")
-            
-            if (continuar.lower() == "s"):
-                nombre_playlist = input("Ingrese el nombre de la playlist que desea exportar: ")
-            
-            else:
-                intentar_nuevamente = False
-                input("Se cancelo la busqueda.\nPresione enter para continuar.")
-       
-        else:
-            intentar_nuevamente = False
-            
-    
-    return id_playlist_buscada
 
 
 def exportar_playlist_spotify(spotify: Spotify) -> None:
@@ -101,7 +54,7 @@ def exportar_playlist_spotify(spotify: Spotify) -> None:
             writer.writerow([   "Nombre", 
                                 "Propietario", 
                                 "ID", 
-                                "Cantidad de Tracks", 
+                                "Cantidad de Tracks",
                                 "Publica", 
                                 "Colaborativa", 
                                 "Descripcion", 
@@ -155,7 +108,8 @@ def mostrar_una_playlist() -> None:
         spotify = llamar_api_spotify()
         mostrar_playlists_spotify(spotify)
     else:
-        pass
+        quickstart.main()
+        
 
 
 def main() -> None:
@@ -187,7 +141,7 @@ def main() -> None:
         
         elif (option == "3"):
             spotify: Spotify = llamar_api_spotify()
-            crear_playlist_spotify(spotify)
+            crear_playlist_spotify(spotify.current_user().id, spotify)
 
         elif (option == "4"):   
             pass

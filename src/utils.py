@@ -1,4 +1,5 @@
 import os
+from tekore import Spotify
 
 # direccion del path principal
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -47,3 +48,74 @@ def validar_opcion(options: list) -> str:
 
     return option
 
+def seleccionar_plataforma()-> str:
+    print("Elija una la plataforma: ")
+    print("[1]- Spotify")
+    print("[2] - Youtube")
+    
+    opcion: str = validar_opcion(["1", "2"])
+    
+    if (opcion == "1"):
+        return "spotify"
+    else:
+        return "youtube"
+
+def buscar_playlist_spotify(spotify: Spotify) -> str:
+    """ Pide un nombre de playlist para buscarla entre sus playlists seguidas y la retorna.
+    Args:
+        spotify (Spotify): Usuario actual.
+    Returns:
+        list: Playlist encontrada
+    """
+    mostrar_playlists_spotify(spotify)
+    nombre_playlist: str = input("Ingrese el nombre de la playlist que desea buscar: ")
+
+    # obtengo una lista de las playlists que sigue el usuario actual
+    playlists = spotify.followed_playlists(limit=50).items
+    id_playlist_buscada: str = ""
+
+    intentar_nuevamente: bool = True
+
+    while (intentar_nuevamente):
+        total_playlists: int = playlists.__len__()
+        encontrada: bool =  False
+
+        while (not encontrada and total_playlists > 0):
+            
+
+            if (playlists[total_playlists - 1].name.lower() == nombre_playlist.lower()):
+                id_playlist_buscada: str = playlists[total_playlists - 1].id
+                encontrada = True              
+            
+            else:
+                total_playlists -= 1
+
+        if (not encontrada):
+            print("No se encontro la playlist.")
+            continuar: str = input("Desea intentar nuevamente? (s/n) ")
+            
+            if (continuar.lower() == "s"):
+                nombre_playlist = input("Ingrese el nombre de la playlist que desea exportar: ")
+            
+            else:
+                intentar_nuevamente = False
+                input("Se cancelo la busqueda.\nPresione enter para continuar.")
+       
+        else:
+            intentar_nuevamente = False 
+        
+    return id_playlist_buscada
+
+def mostrar_playlists_spotify(spotify: Spotify) -> None:
+
+    # Nota : 'Spotify.followed_playlists' obtiene una lista de las listas de reproducción que posee o sigue el usuario actual.
+    #         Los parametros que recibe son 'limit' y 'offset'(este ultimo no es obligatorio). Limit se corresponde al número
+    #         de artículos a devolver (como maximo se puede ingresar el numero 50).
+    recursos_playlists = spotify.followed_playlists(limit=50).items
+    cant_playlists = recursos_playlists.__len__()
+
+    print("------------------Lista de PLAYLISTS------------------")
+    for i in range(cant_playlists):
+        recurso_playlist = spotify.followed_playlists(limit=50).items[i]
+        nombre_playlist = recurso_playlist.name
+        print(f"{i+1} - '{nombre_playlist}'")    

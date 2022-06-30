@@ -3,55 +3,8 @@ import tekore as tk
 from utils import *
 from tekore import RefreshingToken, Spotify
 import csv
-from lyricsgenius import Genius
-from wordcloud import WordCloud
-import matplotlib.pyplot as plt
-
-
-# def generar_wordcloud(spotify: Spotify):
-#     """genera un wordcloud con las letras de las canciones de playlist elegida del usuario actual"""
-    
-#     id_playlist_buscada = buscar_playlist_spotify(spotify)
-#     playlist = spotify.playlist(id_playlist_buscada)
-#     # get the playlist's tracks names and owner's name
-#     tracks = playlist.tracks.items.track
-#     track_names = [track.name for track in tracks]
-#     owner_name = playlist.owner.display_name
-#     # create a word cloud image
-#     wordcloud = WordCloud(width=800, height=400, collocations=False).generate(' '.join(track_names))
-#     # display the word cloud
-#     plt.figure(figsize=(20, 10), facecolor=None)
-#     plt.imshow(wordcloud)
-#     plt.axis("off")
-#     plt.show()
-    
-
-def generar_user_token() -> RefreshingToken:
-
-    if os.path.exists(FILE_TEKORE):
-
-        configuracion = tk.config_from_file(FILE_TEKORE, return_refresh=True)
-        user_token = tk.refresh_user_token(*configuracion[:2], configuracion[3])
-        #  Esta linea es la reemplazante de la linea " user_token = tk.prompt_for_user_token(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI, scope=tk.scope.every) "
-        #  o de la linea de abajo " user_token = tk.prompt_for_user_token(*conf, scope=tk.scope.every) ".
-        # Ademas actualiza el archivo externo "FILE_TEKORE" con el nuevo TOKEN.
-    else:
-        conf = (CLIENT_ID_SPOTIFY, CLIENT_SECRET_SPOTIFY, REDIRECT_URI_SPOTIFY)
-        user_token = tk.prompt_for_user_token(*conf, scope=tk.scope.every)
-        tk.config_to_file(FILE_TEKORE, conf + (user_token.refresh_token,))
-        #  Esto va a redireccionar a un formulario donde le pide al usuario la aceptacion de compartir los recursos de la cuenta spotify.
-        #  Una vez que el usuario acepta, lo dirige al URL que indicamos arriba ( osea al REDIRECT_URI ) pero este URL tiene mas elementos
-        #  agregados dentro de el (digamos que nos dirige a un URL mas extenso que al que indicamos). A su vez, si nos fijamos en la consola
-        #  de pycharm, veremos que nos pide pegar a dicho URL extenso, asi que debemos copiar el URL extenso y pegarlo en la consola. Con
-        #  esto se genera el token por primera vez y lo guarda en "user_token".
-        #  Tambien se crea el archivo externo "FILE_TEKORE" con los siguientes datos : CLIENT_ID, CLIENT_SECRET, REDIRECT_URI y el TOKEN.
-
-    return user_token
-
-
-def llamar_api_spotify() -> Spotify:
-
-    return tk.Spotify(generar_user_token())
+from llamar_apis import *
+from generar_wordcloud import generar_wc
 
 
 def obtener_id_usuario_actual(spotify: Spotify) -> str:
@@ -71,26 +24,10 @@ def crear_playlist_spotify(id_usuario_actual: str, spotify: Spotify) -> None:
     spotify.playlist_create(id_usuario_actual, nombre_playlist, public=True)
 
 
-def mostrar_playlists_spotify(spotify: Spotify) -> None:
-
-    # Nota : 'Spotify.followed_playlists' obtiene una lista de las listas de reproducción que posee o sigue el usuario actual.
-    #         Los parametros que recibe son 'limit' y 'offset'(este ultimo no es obligatorio). Limit se corresponde al número
-    #         de artículos a devolver (como maximo se puede ingresar el numero 50).
-    recursos_playlists = spotify.followed_playlists(limit=50).items
-    cant_playlists = recursos_playlists.__len__()
-
-    print("------------------Lista de PLAYLISTS------------------")
-    for i in range(cant_playlists):
-        recurso_playlist = spotify.followed_playlists(limit=50).items[i]
-        nombre_playlist = recurso_playlist.name
-        print(f"{i+1} - '{nombre_playlist}'")
-
-
 def buscar_playlist_spotify(spotify: Spotify) -> str:
     """ Pide un nombre de playlist para buscarla entre sus playlists seguidas y la retorna.
     Args:
         spotify (Spotify): Usuario actual.
-
     Returns:
         list: Playlist encontrada
     """
@@ -111,7 +48,7 @@ def buscar_playlist_spotify(spotify: Spotify) -> str:
             
 
             if (playlists[total_playlists -1].name.lower() == nombre_playlist.lower()):
-                id_playlist_buscada: str = playlists[total_playlists].id
+                id_playlist_buscada: str = playlists[total_playlists - 1].id
                 encontrada = True              
             
             else:
@@ -131,13 +68,14 @@ def buscar_playlist_spotify(spotify: Spotify) -> str:
         else:
             intentar_nuevamente = False
             
-        
-        
+    
     return id_playlist_buscada
 
 
-def exportar_playlist_spotify(id_playlist_buscada: str, spotify: Spotify) -> None:
+def exportar_playlist_spotify(spotify: Spotify) -> None:
     # exporta los 10 atributos de la playlist a un archivo csv
+    id_playlist_buscada: str = buscar_playlist_spotify(spotify)
+    
     try:
         playlist = spotify.playlist(id_playlist_buscada)
         
@@ -158,7 +96,7 @@ def exportar_playlist_spotify(id_playlist_buscada: str, spotify: Spotify) -> Non
         csv_playlist_nombre: str = playlist.name.replace(" ", "_")    
         csv_playlist_path: str = os.path.join(BASE_DIR, "playlists", f"{csv_playlist_nombre}.csv")
         
-        with open(csv_playlist_path, "w") as f:
+        with open(csv_playlist_path, "w", encoding="utf-8") as f:
             writer = csv.writer(f)
             writer.writerow([   "Nombre", 
                                 "Propietario", 
@@ -181,6 +119,8 @@ def exportar_playlist_spotify(id_playlist_buscada: str, spotify: Spotify) -> Non
                                 images, 
                                 followers, 
                                 playlist_url])
+
+        input("Playlist exportada correctamente.\nPresione enter para continuar.")
 
     except Exception as e:
         print(f"No se pudo exportar la playlist: {e}")
@@ -207,17 +147,59 @@ def sincronizar_spotify_youtube(spotify: Spotify) -> list:
 
     return lista_canciones_playlist
 
-def main() -> None:
-    """ Funcion principal. """
-    spotify = llamar_api_spotify()
-    id_usuario_actual = obtener_id_usuario_actual(spotify)
-    # crear_playlist(id_usuario_actual, spotify)
-    mostrar_playlists_spotify(spotify)
-    
-    generar_wordcloud(spotify)
 
-    # playlist_buscada = buscar_playlist_spotify(spotify)
-    # exportar_playlist_spotify(playlist_buscada, spotify)
-    # lista_de_canciones_playlist = sincronizar_spotify_youtube(llamar_api_spotify())
-    # print(lista_de_canciones_playlist)
+def mostrar_una_playlist() -> None:
+    plataforma: str = seleccionar_plataforma()
+   
+    if (plataforma == "spotify"):
+        spotify = llamar_api_spotify()
+        mostrar_playlists_spotify(spotify)
+    else:
+        pass
+
+
+def main() -> None:
+
+    cls()
+    
+    continuar_ejecucion: bool = True
+    
+    while (continuar_ejecucion):
+        print("""
+        [1] Listar las playlists actuales para un determinado usuario y plataforma
+        [2] Elegir una playlist y exportarla a CSV indicando los 10 atributos principales
+        [3] Crear una nueva playlist
+        [4] Buscar nuevos elementos para visualizar o agregarlos a una playlist
+        [5] Sincronizar una playlist entre Youtube y Spotify, (se exportaran en un archivo
+            CSV los elementos que no encuentren en la plataforma de destino)
+        [6] Analizar una playlist y construir la nube de palabras y el ranking del top 10 de
+            palabas más utilizadas en las letras de dicha playlist
+        [7] Salir
+        """)
+        option: str = validar_opcion(["1", "2", "3", "4", "5", "6"])
+
+        if (option == "1"):
+            mostrar_una_playlist()
+
+        elif (option == "2"):
+            spotify: Spotify = llamar_api_spotify()
+            exportar_playlist_spotify(spotify)
+        
+        elif (option == "3"):
+            spotify: Spotify = llamar_api_spotify()
+            crear_playlist_spotify(spotify)
+
+        elif (option == "4"):   
+            pass
+
+        elif (option == "5"):
+            pass
+
+        elif (option == "6"):
+            spotify: Spotify = llamar_api_spotify()
+            generar_wc(spotify)
+
+        elif (option == "7"):
+            continuar_ejecucion = False
+
 main()

@@ -1,11 +1,10 @@
 from utils import *
 from tekore import Spotify
 from wordcloud import WordCloud
-from agregar_a_principal import llamar_api_spotify, buscar_playlist_spotify
+from llamar_apis import *
 from lyricsgenius import Genius
 import re
 import matplotlib.pyplot as plt
-import requests
 
 
 def obetener_info_de_tracks(spotify: Spotify)-> dict:
@@ -45,7 +44,7 @@ def limpiar_letras(letras: tuple) -> str:
     return letras_canciones_string
     
 
-def generar_wordcloud(spotify: Spotify):
+def generar_wc(spotify: Spotify):
     """genera un wordcloud con las letras de las canciones de playlist elegida del usuario actual"""
     genius = Genius(CLIENT_ID_GENIUS)
     playlist_tracks_info = obetener_info_de_tracks(spotify)

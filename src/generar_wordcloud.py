@@ -5,6 +5,7 @@ from agregar_a_principal import llamar_api_spotify, buscar_playlist_spotify
 from lyricsgenius import Genius
 import re
 import matplotlib.pyplot as plt
+import requests
 
 
 def obetener_info_de_tracks(spotify: Spotify)-> dict:

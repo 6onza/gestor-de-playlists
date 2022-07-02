@@ -1,7 +1,7 @@
 from utils import *
 from tekore import Spotify
 from wordcloud import WordCloud
-from llamar_apis import *
+from spotify_api import *
 from lyricsgenius import Genius
 import re
 import matplotlib.pyplot as plt

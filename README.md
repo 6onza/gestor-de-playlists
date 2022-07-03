@@ -5,5 +5,6 @@ Trabajo Práctico N°2 Algoritmos y Programación 1 (Cátedra Costa) - Facultad 
 
 ## Ejecución del programa
 * Instalar las dependencias `pip3 install -r requirements.txt`
+* Instalar las dependencias de la api de google `pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib`
 * Indicar en el archivo `utils.py` las credenciales de las apis
 * Ejecutar el script principal `python3 main.py`

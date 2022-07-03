@@ -31,8 +31,33 @@ def mostrar_playlists_youtube():
     
     for i,playlist in enumerate(response["items"]):
         print(f"{i + 1} {playlist['snippet']['title']}")
-    
 
+        
+def crear_una_playlist_youtube():
+    id_request = id_request.execute()
+    nombre = input("Ingrese el nombre de la nueva playlist: ")
+    descr = input("ingrese la descripcion (opcional): ")
+    if len(descr) == 0:
+        descr = None
+    else:
+        descr= descr
+    playlists_insert_response = youtube.playlists().insert(
+    part="snippet,status",
+    body=dict(
+        snippet=dict(
+            title=nombre,
+            description= descr
+            ),
+            status=dict(
+            privacyStatus="public"
+            )
+        )
+    ).execute()
+
+    print("id de la playlist: ", playlists_insert_response["id"])
+    return None
+        
+        
 if __name__ == "__main__":
     SCOPES: list = ["https://www.googleapis.com/auth/youtube.readonly"]
     api_service_name: str = "youtube"

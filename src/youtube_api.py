@@ -4,13 +4,15 @@ import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import googleapiclient.errors
 
-
-SCOPES: list = ["https://www.googleapis.com/auth/youtube.readonly"]
+# ########### SCOPES PARA LA API DE YOUTUBE ################################
+SCOPES_READ_ONLY: list = ["https://www.googleapis.com/auth/youtube.readonly"]
+SCOPES_PARA_MODIFICAR: list = ["https://www.googleapis.com/auth/youtube.force-ssl"]
+#######################################3####################################
 api_service_name: str = "youtube"
 api_version: str = "v3"
 client_secrets_file: str = "credentials.json"
 
-def autenticar_youtube() -> googleapiclient.discovery.Resource:
+def autenticar_youtube(scopes: list) -> googleapiclient.discovery.Resource:
     """ Autentica al usuario en Youtube y devuelve un objeto Resource
 
     Returns:
@@ -18,7 +20,7 @@ def autenticar_youtube() -> googleapiclient.discovery.Resource:
     """
     # obtengo las credenciales de la API Sy el API Client
     flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
-        client_secrets_file, SCOPES)
+        client_secrets_file, scopes)
     credentials = flow.run_console()
 
     # creo el objeto Resource de Youtube
@@ -60,8 +62,9 @@ def obtener_playlists_youtube(youtube)-> list:
 
 def mostrar_playlists_youtube()-> None:
     cls()
-    youtube = autenticar_youtube()
+    youtube = autenticar_youtube(SCOPES_READ_ONLY)
     playlists: list = obtener_playlists_youtube(youtube)
+
     print(f"Playlists de Youtube: ")
     
     for i,playlist in enumerate(playlists):
@@ -69,26 +72,32 @@ def mostrar_playlists_youtube()-> None:
 
         
 def crear_una_playlist_youtube():
-    id_request = id_request.execute()
-    nombre = input("Ingrese el nombre de la nueva playlist: ")
-    descr = input("ingrese la descripcion (opcional): ")
-    if len(descr) == 0:
-        descr = None
-    else:
-        descr= descr
-    playlists_insert_response = youtube.playlists().insert(
-    part="snippet,status",
-    body=dict(
-        snippet=dict(
-            title=nombre,
-            description= descr
-            ),
-            status=dict(
-            privacyStatus="public"
-            )
-        )
-    ).execute()
 
-    print("id de la playlist: ", playlists_insert_response["id"])
-    return None
-        
+    youtube = autenticar_youtube(SCOPES_PARA_MODIFICAR)
+
+    try:
+        nombre: str = input("Nombre de la playlist: ")
+        descripcion: str = input("Descripcion de la playlist: ")
+       
+        if descripcion == "":
+            descripcion = None
+
+        request = youtube.playlists().insert(
+            part="snippet,status",
+            body={
+                "snippet": {
+                    "title": nombre,
+                    "description": descripcion
+                },
+                "status": {
+                    "privacyStatus": "public"
+                }
+            }
+        )
+        response = request.execute()
+        print(f"Playlist creada: {response['snippet']['title']}")
+        input("Pulse enter para continuar...")
+
+    except Exception as e:
+        print("Hubo un error al crear la playlist: ", e)")
+        input("Pulsa enter para continuar...") 

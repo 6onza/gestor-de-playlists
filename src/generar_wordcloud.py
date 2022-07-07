@@ -51,8 +51,10 @@ def limpiar_nombres_canciones_youtube(canciones: dict)-> dict:
     # creo un string con todas las letras de las canciones
     nombres_limpios: dict = {}
     for autor, cancion in canciones.items():
-
-        nombres_limpios[autor] = re.sub(r'\(.*?\)', '', cancion)
+        nombre_limpio: str = ""
+        nombre_limpio = re.sub(r'\(.*?\)', '', cancion)
+        nombre_limpio = re.sub(r'\[.*?\]', '', nombre_limpio)
+        nombres_limpios[autor] = nombre_limpio
     
     return nombres_limpios
 
@@ -74,8 +76,12 @@ def generar_wc():
     letras_canciones = {}
 
     for key, value in playlist_tracks_info.items():
-        letras_canciones[key] = genius.search_song(value, key)
-    
+        try:
+            letras_canciones[key] = genius.search_song(value, key)
+        
+        except Exception as e:
+            print("")
+            
     for key, value in letras_canciones.items():
         
         if value is None:

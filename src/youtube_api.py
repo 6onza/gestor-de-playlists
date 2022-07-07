@@ -82,6 +82,7 @@ def mostrar_playlists_youtube(youtube)-> None:
     for i,playlist in enumerate(playlists):
         print(f"{i + 1} - {playlist['snippet']['title']}")
 
+
 def exportar_playlist_youtube(youtube)-> None:
     """ exporta 10 caracteristicas de una playlist de Youtube elegida a un archivo csv
 
@@ -182,6 +183,43 @@ def obtener_nombres_de_canciones_youtube(youtube)-> list:
             info_canciones[cancion_aux[0]] = cancion_aux[1]
 
     return info_canciones
+
+
+def obtener_canciones_de_una_playlist_youtube(id_playlist_youtube: str, youtube) -> list:
+    """ Obtiene las canciones de una playlists de Youtube y las devuelve en una lista
+
+        Returns:
+            list: Lista de canciones de una playlists de Youtube
+        """
+
+    request = youtube.playlistItems().list(
+        part="snippet",
+        playlistId=id_playlist_youtube,
+        maxResults=50
+    )
+    response = request.execute()
+
+    return response["items"]
+    
+
+def obtener_nombres_de_una_playlist()-> list:
+    """ Obtiene las canciones de una playlist de Youtube elegida y retorna una lista con ellas"""
+    youtube = autenticar_youtube()
+    mostrar_playlists_youtube(youtube)
+    opcion = validar_opcion([str(i) for i in range(1, len(obtener_playlists_youtube(youtube)) + 1)])
+    playlist_id = obtener_playlists_youtube(youtube)[int(opcion)-1]["id"]
+    playlist_elegida = youtube.playlistItems().list(
+        part="snippet",
+        playlistId=playlist_id,
+        maxResults=50,
+    ).execute()
+
+    canciones: list = []
+    for cancion in playlist_elegida["items"]:
+        canciones.append(cancion["snippet"]["title"])
+    
+
+    return canciones
 
 
 def crear_una_playlist_youtube(youtube):

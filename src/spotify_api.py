@@ -1,12 +1,7 @@
 import os
 import tekore as tk
 import csv
-from utils import ( FILE_TEKORE,
-                    CLIENT_ID_SPOTIFY,
-                    CLIENT_SECRET_SPOTIFY,
-                    REDIRECT_URI_SPOTIFY,
-                    validar_opcion,
-                    )
+from utils import *
 from tekore import RefreshingToken, Spotify
 
 def generar_user_token() -> RefreshingToken:
@@ -94,6 +89,9 @@ def crear_playlist_spotify(id_usuario_actual: str, spotify: Spotify) -> None:
     try:
         nombre_playlist: str = input("Ingrese el nombre que le desea poner a la playlist: ")
         spotify.playlist_create(id_usuario_actual, nombre_playlist, public=True)
+        print("Playlist creada con exito")
+        input("Presione enter para continuar")
+        
     except Exception as e:
         print(f"No se pudo crear la playlist: {e}")
         input("Presione enter para continuar.")

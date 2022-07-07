@@ -6,138 +6,172 @@ import csv
 from spotify_api import *
 from youtube_api import *
 from generar_wordcloud import generar_wc
-import quickstart
 
 
-def obtener_id_usuario_actual(spotify: Spotify) -> str:
-    
-    # Nota : 'spotify.current_user()' obtiene recursos del perfil del usuario actual. No requiere argumentos obligatorios.
-    usuario_actual = spotify.current_user()
-    id_usuario_actual = usuario_actual.id
+def sincronizar_spotify_youtube(spotify, youtube) -> None:
 
-    return id_usuario_actual
+    lista_playlists_spotify: list = list()
+    lista_playlists_youtube: list = list()
+
+    cant_playlists_spotify:int = spotify.followed_playlists(limit=50).items.__len__()
+
+    for i in range(cant_playlists_spotify):
+        recurso_playlist = spotify.followed_playlists(limit=50).items[i]
+        lista_playlists_spotify.append([recurso_playlist.name, recurso_playlist.id])
+
+    playlists_youtube: list = obtener_playlists_youtube(youtube)
+
+    for j in range(len(playlists_youtube)):
+        playlist_youtube = playlists_youtube[j]
+        lista_playlists_youtube.append([playlist_youtube["snippet"]["title"], playlist_youtube["id"]])
+
+    lista_playlists_spotify_posible_sincronizacion: list = list()
+    lista_playlists_youtube_posible_sincronizacion: list = list()
+
+    for elemento_spotify in lista_playlists_spotify:
+        for elemento_youtube in lista_playlists_youtube:
+            if elemento_youtube[0] == elemento_spotify[0]:
+                lista_playlists_youtube_posible_sincronizacion.append(elemento_youtube)
+                lista_playlists_spotify_posible_sincronizacion.append(elemento_spotify)
+
+    if lista_playlists_youtube_posible_sincronizacion != []:    #  Es indiferente si ponia "lista_playlist_spotify_posible_sincronizacion" por como armamos el
+                                                                #  codigo arriba (cuando llenabamos "lista_playlist_youtube_posible_sincronizacion" a la vez se
+                                                                #  llenaba "lista_playlist_spotify_posible_sincronizacion").
+
+        for k in range(len(lista_playlists_youtube_posible_sincronizacion)):      #   Es indiferente si ponia "lista_playlist_spotify_posible_sincronizacion" por
+                                                                                  #   como armamos el codigo arriba (cuando llenabamos
+                                                                                  #   "lista_playlist_youtube_posible_sincronizacion" a la vez se llenaba
+                                                                                  #   "lista_playlist_spotify_posible_sincronizacion").
+
+            print(f"{k + 1} - {lista_playlists_youtube_posible_sincronizacion[k][0]}")
+
+        lista_de_opciones: list = [str(i) for i in range(1, len(lista_playlists_youtube_posible_sincronizacion) + 1)]
+        eleccion: int = int(validar_opcion(lista_de_opciones))
+
+        datos_playlist_youtube_a_sincronizar: list = lista_playlists_youtube_posible_sincronizacion[eleccion - 1]
+        datos_playlist_spotify_a_sincronizar: list = lista_playlists_spotify_posible_sincronizacion[eleccion - 1]
+
+        lista_de_canciones_playlist_spotify_a_sincronizar: list = list()
+        lista_de_canciones_playlist_youtube_a_sincronizar: list = list()
+
+        # Comenzamos llenando "lista_de_canciones_playlist_spotify_a_sincronizar"
+        id_playlist_spotify_a_sincronizar: str = datos_playlist_spotify_a_sincronizar[1]
+        recursos_canciones_playlist_spotify_a_sincronizar = spotify.playlist(id_playlist_spotify_a_sincronizar, as_tracks=False).tracks
+        cant_canciones_playlist_spotify_a_sincronizar: int = recursos_canciones_playlist_spotify_a_sincronizar.items.__len__()
+
+        for a in range(cant_canciones_playlist_spotify_a_sincronizar):
+            cancion_de_playlist_spotify_a_sincronizar = recursos_canciones_playlist_spotify_a_sincronizar.items[a].track
+            nombre_cancion_de_playlist_spotify_a_sincronizar: str = cancion_de_playlist_spotify_a_sincronizar.name
+            artista_cancion_de_playlist_spotify_a_sincronizar: str = cancion_de_playlist_spotify_a_sincronizar.artists[0].name
+            lista_de_canciones_playlist_spotify_a_sincronizar.append([nombre_cancion_de_playlist_spotify_a_sincronizar.lower(), artista_cancion_de_playlist_spotify_a_sincronizar])
+
+        # Seguimos llenando "lista_de_canciones_playlist_youtube_a_sincronizar"
+        id_playlist_youtube_a_sincronizar: str = datos_playlist_youtube_a_sincronizar[1]
+        canciones_playlist_youtube_a_sincronizar: list = obtener_canciones_de_una_playlist_youtube(id_playlist_youtube_a_sincronizar, youtube)
+
+        for b in range(len(canciones_playlist_youtube_a_sincronizar)):
+            cancion_de_playlist_youtube_a_sincronizar = canciones_playlist_youtube_a_sincronizar[b]
+            nombre_cancion_de_playlist_youtube_a_sincronizar: str = cancion_de_playlist_youtube_a_sincronizar["snippet"]["title"]
+
+            #  PUEDE SER que necesitemos buscar este "nombre_cancion_de_playlist_youtube_a_sincronizar" en Spotify, asi que vamos a tener que eliminar el
+            #  "(Video Oficial)" o "(Official Video)" o "(Official Music Video)" que aparecen en los nombres de las canciones de Youtube porque en spotify
+            #  no hay resultados de "(Video Oficial)" o "(Official Video)" o "(Official Music Video)".
+            nombre_cancion_de_playlist_youtube_a_sincronizar = nombre_cancion_de_playlist_youtube_a_sincronizar.replace("(Official Video)", "")
+            nombre_cancion_de_playlist_youtube_a_sincronizar = nombre_cancion_de_playlist_youtube_a_sincronizar.replace("(Video Oficial)", "")
+            nombre_cancion_de_playlist_youtube_a_sincronizar = nombre_cancion_de_playlist_youtube_a_sincronizar.replace("(Official Music Video)", "")
+
+            #  En el "nombre_cancion_de_playlist_youtube_a_sincronizar", Youtube trae el nombre de la cancion junto con todos los artistas de la cancion.
+            #  NORMALMENTE el nombre de la cancion y el nombre del artista vienen separados por el simbolo "-" (donde a la izquierda de este simbolo se ubica
+            #  el nombre del artista y a la derecha de ese simbolo se ubica el nombre de la cancion). Entonces trabajare con "nombre_cancion_de_playlist_youtube_a_sincronizar"
+            #  para obtener al nombre de la cancion (pero unicamente al nombre) y el nombre del artista.
+            posicion_caracter_especial: int = nombre_cancion_de_playlist_youtube_a_sincronizar.find("-")
+            artista_cancion_de_playlist_youtube_a_sincronizar: str = nombre_cancion_de_playlist_youtube_a_sincronizar[0:posicion_caracter_especial:1]
+            unicamente_nombre_cancion_de_playlist_youtube_a_sincronizar: str = nombre_cancion_de_playlist_youtube_a_sincronizar[posicion_caracter_especial + 1::1]
+
+            lista_de_canciones_playlist_youtube_a_sincronizar.append([unicamente_nombre_cancion_de_playlist_youtube_a_sincronizar.lower(), artista_cancion_de_playlist_youtube_a_sincronizar])
+
+        canciones_a_exportar_a_csv: list = list()
+        # Primero vamos a ver cancion por cancion de la playlist de youtube si se encuentra en algunas de las canciones de spotify.
+        for cancion_youtube in lista_de_canciones_playlist_youtube_a_sincronizar:
+            coincidencias: int = 0
+            for cancion_spotify in lista_de_canciones_playlist_spotify_a_sincronizar:
+                if (cancion_spotify[0] in cancion_youtube[0]):
+                    coincidencias += 1
+            if coincidencias == 0:
+                nombre_cancion_de_youtube_a_agregar_a_spotify: str = cancion_youtube[0] + " " + cancion_youtube[1]
+                busqueda_de_cancion_en_spotify = spotify.search(nombre_cancion_de_youtube_a_agregar_a_spotify, types=('track',), limit=1)[0]
+                cancion_encontrada_en_spotify = busqueda_de_cancion_en_spotify.items[0]
+                uri_cancion_encontrada_en_spotify = cancion_encontrada_en_spotify.uri
+                spotify.playlist_add(datos_playlist_spotify_a_sincronizar[1], uris=[uri_cancion_encontrada_en_spotify])
+                canciones_a_exportar_a_csv.append(cancion_youtube)
 
 
-def crear_playlist_spotify(id_usuario_actual: str, spotify: Spotify) -> None:
+        with open("canciones_a_sincronizar.csv", 'w', newline='', encoding="UTF-8") as archivo_csv:
 
-    # Nota : ' spotify.playlist_create ' crea una lista de reproducción. Recibe como argumentos a 'user_id (str)', 'nombre_playlist (str)', 'public (bool)'
-    #        y 'descripcion_playlist (str)'.
-    try:
-        nombre_playlist: str = input("Ingrese el nombre que le desea poner a la playlist: ")
-        spotify.playlist_create(id_usuario_actual, nombre_playlist, public=True)
-    except Exception as e:
-        print(f"No se pudo crear la playlist: {e}")
-        input("Presione enter para continuar.")
+            csv_writer = csv.writer(archivo_csv, delimiter=',', quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
+
+            csv_writer.writerow(["Titulo de cancion", "Artistas"])
+
+            csv_writer.writerows(canciones_a_exportar_a_csv)
 
 
-def exportar_playlist_spotify(spotify: Spotify) -> None:
-    # exporta los 10 atributos de la playlist a un archivo csv
-    id_playlist_buscada: str = buscar_playlist_spotify(spotify)
-    
-    try:
-        playlist = spotify.playlist(id_playlist_buscada)
-        
-        nombre_playlist: str = playlist.name
-        owner: str = playlist.owner.display_name
-        playlist_id: str = playlist.id
-        cant_tracks: str = playlist.tracks.total
-        public: str = playlist.public
-        collaborative: str = playlist.collaborative
-        description: str = playlist.description
-        images: str = playlist.images[0].url
-        followers: str = playlist.followers.total
-        playlist_url: str = playlist.external_urls['spotify']
-
-        if (not os.path.exists(PLAYLISTS_DIR)):
-            os.makedirs(PLAYLISTS_DIR)
-
-        csv_playlist_nombre: str = playlist.name.replace(" ", "_")    
-        csv_playlist_path: str = os.path.join(BASE_DIR, "playlists", f"{csv_playlist_nombre}.csv")
-        
-        with open(csv_playlist_path, "w", encoding="utf-8") as f:
-            writer = csv.writer(f)
-            writer.writerow([   "Nombre", 
-                                "Propietario", 
-                                "ID", 
-                                "Cantidad de Tracks",
-                                "Publica", 
-                                "Colaborativa", 
-                                "Descripcion", 
-                                "Imagen", 
-                                "Seguidores", 
-                                "URL"])
-            
-            writer.writerow([   nombre_playlist, 
-                                owner, 
-                                playlist_id, 
-                                cant_tracks, 
-                                public, 
-                                collaborative, 
-                                description, 
-                                images, 
-                                followers, 
-                                playlist_url])
-
-        input("Playlist exportada correctamente.\nPresione enter para continuar.")
-
-    except Exception as e:
-        print(f"No se pudo exportar la playlist: {e}")
-        input("Presione enter para continuar.")
-
-    
-def sincronizar_spotify_youtube(spotify: Spotify) -> list:
-
-    lista_canciones_playlist = list() # Aca se formara una lista de listas.
-
-    cant_playlists = spotify.followed_playlists(limit=50).items.__len__()
-    print("¿ CUAL DE TODAS SUS PLAYLISTS de SPOTIFY DESEA SINCRONIZAR CON YOUTUBE ?")
-    mostrar_playlists_spotify(spotify)
-    lista_de_opciones: list = [str(i) for i in range(1, cant_playlists + 1)]
-    eleccion: int = int(validar_opcion(lista_de_opciones))
-    recurso_playlist_elegida: list = spotify.followed_playlists(limit=50).items[eleccion - 1]
-    id_playlist_elegida: str = recurso_playlist_elegida.id
-    recursos_canciones_playlist: list = spotify.playlist(id_playlist_elegida, as_tracks=False).tracks
-    cant_canciones_playlist_elegida: int = recursos_canciones_playlist.items.__len__()
-
-    for i in range(cant_canciones_playlist_elegida):
-        cancion_de_playlist: str = recursos_canciones_playlist.items[i].track.name
-        lista_canciones_playlist.append([cancion_de_playlist])
-
-    return lista_canciones_playlist
+    else:
+        print("Lo siento, no hay playlists a sincronizar") 
 
 
-def mostrar_una_playlist() -> None:
+def mostrar_playlists() -> None:
     plataforma: str = seleccionar_plataforma()
    
     if (plataforma == "spotify"):
         spotify: Spotify = llamar_api_spotify()
         mostrar_playlists_spotify(spotify)
     else:
-        mostrar_playlists_youtube()
-        
-def agregar_canciones_a_la_playlist(id_playlist_a_modificar: str, uri_de_cancion: list, spotify: Spotify):
-    agregar_cancion = spotify.playlist_add(id_playlist_a_modificar, uri_de_cancion)
-    input("Canción agregada.\nPresione enter para continuar.")
-    return agregar_cancion
+        youtube = autenticar_youtube()
+        mostrar_playlists_youtube(youtube)      
 
 
-def buscar_nuevos_elementos(spotify: Spotify):
-
-    id_playlist_buscada: str = buscar_playlist_spotify(spotify)
-    nombre_elemento: str = input("Ingrese el nombre del elemento que quiere agregar a la playlist: ")
-    busqueda: tuple = spotify.search(query=nombre_elemento, limit=3)
-    opciones_de_cancion: list = []
-    #busqueda[0].items
-    for i in range(len(busqueda[0].items)):
-        opciones_de_cancion.append(busqueda[0].items[i])
-    for i in range(3):
-        print(i + 1, opciones_de_cancion[i].name, " - ", opciones_de_cancion[i].artists[0].name)
-    seleccion: str = validar_opcion(["1", "2", "3"])
+def exportar_atributos_de_una_playlist()->None:
+    plataforma: str = seleccionar_plataforma()
     
-    print(opciones_de_cancion[0].name, "-", opciones_de_cancion[0].artists[0].name)
-    uri_cancion_a_agregar: str = opciones_de_cancion[int(seleccion) - 1].uri
-    uris: list = [uri_cancion_a_agregar]
-    agregar_canciones_a_la_playlist(id_playlist_buscada, uris, spotify)
+    if (plataforma == "spotify"):
+        spotify: Spotify = llamar_api_spotify()
+        exportar_playlist_spotify(spotify)
+    else:
+        youtube = autenticar_youtube()
+        exportar_playlist_youtube(youtube)
+
+
+def crear_una_playlist()->None:
+    plataforma: str = seleccionar_plataforma()
+    
+    if (plataforma == "spotify"):
+        spotify: Spotify = llamar_api_spotify()
+        id_user = spotify.current_user().id
+        crear_playlist_spotify(id_user, spotify)
+    else:
+        youtube = autenticar_youtube()
+        crear_una_playlist_youtube(youtube)
+
+
+def agregar_una_cancion_a_playlist() -> None:
+    plataforma: str = seleccionar_plataforma()
+    
+    if (plataforma == "spotify"):
+        spotify: Spotify = llamar_api_spotify()
+        seguir_agregando: bool = True
+        while seguir_agregando:
+            buscar_nuevos_elementos(spotify)
+            seguir_agregando: bool = input("¿ Desea agregar otra canción a la playlist? (s/n) ")
+            
+            if (seguir_agregando == "s"):
+                seguir_agregando: bool = True
+            
+            elif (seguir_agregando == "n"):
+                seguir_agregando: bool = False
+    else:
+        youtube = autenticar_youtube()
+        agregar_un_item_a_la_playlist_youtube(youtube)
+    
 
 def main() -> None:
 
@@ -146,6 +180,7 @@ def main() -> None:
     continuar_ejecucion: bool = True
     
     while (continuar_ejecucion):
+        cls()
         print("""
         [1] Listar las playlists actuales para un determinado usuario y plataforma
         [2] Elegir una playlist y exportarla a CSV indicando los 10 atributos principales
@@ -160,27 +195,23 @@ def main() -> None:
         option: str = validar_opcion(["1", "2", "3", "4", "5", "6"])
 
         if (option == "1"):
-            mostrar_una_playlist()
+            mostrar_playlists()
             input("Pulse enter para volver al menú")
 
         elif (option == "2"):
-            spotify: Spotify = llamar_api_spotify()
-            exportar_playlist_spotify(spotify)
+            exportar_atributos_de_una_playlist()
         
         elif (option == "3"):
-            spotify: Spotify = llamar_api_spotify()
-            crear_playlist_spotify(spotify.current_user().id, llamar_api_spotify())
+            crear_una_playlist()
 
         elif (option == "4"):   
-            spotify: Spotify = llamar_api_spotify()
-            buscar_nuevos_elementos(spotify)
+            agregar_una_cancion_a_playlist()
 
         elif (option == "5"):
             print(sincronizar_spotify_youtube(llamar_api_spotify()))
 
         elif (option == "6"):
-            spotify: Spotify = llamar_api_spotify()
-            generar_wc(spotify)
+            generar_wc()
 
         elif (option == "7"):
             continuar_ejecucion = False

@@ -1,7 +1,7 @@
 # Gestor de playlists
 ### Trabajo Práctico Grupal - Facultad de Ingenieria - Universidad de Buenos Aires
 
-* Clonar el repositorio `git clone https://github.com/1murda/tp-2`
+* Clonar el repositorio `git clone https://github.com/1murda/gestor-de-playlists`
 
 ## Crear proyecto en la API de Google para el manejo de sus recursos
 * Link para crearlo `https://console.cloud.google.com/projectcreate` 

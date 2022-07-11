@@ -68,7 +68,7 @@ def mostrar_playlists_spotify(spotify: Spotify) -> None:
 
     print("------------------Lista de PLAYLISTS------------------")
     for i in range(cant_playlists):
-        recurso_playlist = spotify.followed_playlists(limit=50).items[i]
+        recurso_playlist = recursos_playlists[i]
         nombre_playlist = recurso_playlist.name
         print(f"{i+1} - '{nombre_playlist}'") 
 

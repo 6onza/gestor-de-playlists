@@ -1,6 +1,9 @@
 # Gestor de playlists
 ### Trabajo Práctico Grupal - Facultad de Ingenieria - Universidad de Buenos Aires
 
+## Menu del programa
+![MENU GESTOR](https://github.com/1murda/gestor-de-playlists/blob/main/ss/menu-gestor.png)
+
 * Clonar el repositorio `git clone https://github.com/1murda/gestor-de-playlists`
 
 ## Crear proyecto en la API de Google para el manejo de sus recursos
